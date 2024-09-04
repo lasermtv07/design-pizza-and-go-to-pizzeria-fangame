@@ -2,6 +2,7 @@
 import pygame as pg
 import sys
 import random as r
+import math as m
 pg.init()
 screen=pg.display.set_mode((1280,720))
 #player
@@ -11,6 +12,8 @@ py=450
 flip=False
 v=7
 count=0
+wave=1
+score=0
 #pizzas
 pizza=pg.image.load('gfx/pizza.png')
 pizzas=[]
@@ -27,33 +30,32 @@ kid=pg.image.load('gfx/kid.png')
 kids=[]
 #summons kids
 def summon(c):
-    rows=[]
     global kids
-    if c<=24:
-        rows.append(c-r.randint(0,c))
-        c-=rows[0]
-        rows.append(c-r.randint(0,c))
-        c-=rows[1]
-        rows.append(c-r.randint(0,c))
-        c-=rows[2]
-        rows.append(c-r.randint(0,c))
-        c-=rows[3]
+    rows=[[0 for j in range(9)] for i in range(7)]
+    for i in range(c):
+        j=r.randint(0,6)
+        l=r.randint(0,8)
+        while rows[j][l]!=0:
+            j=r.randint(0,6)
+            l=r.randint(0,8)
+        rows[j][l]=1
     for i in range(len(rows)):
-        d=[]
-        for j in range(10):
-            if rows[i]>0:
-                d.append(1)
-                rows[i]-=1
-            else: d.append(0)
-        r.shuffle(d)
-        print(d)
-        for j in range(len(d)):
-            if d[j]==1: kids.append([600+100*i,70*j,5])
+        for j in range(len(rows[i])):
+            if rows[i][j]!=0:
+                kids.append([750+70*j,100*i,5])
+    print(kids)
     return rows
-print(summon(3))
+print(summon(5))
+
+font = pg.font.Font(pg.font.get_default_font(), 16)
+text=font.render('Score: 0',True,(255,255,255),(0,0,0))
+textRect=text.get_rect()
+textRect.top=0
+textRect.right=1280
 
 while True:
     screen.fill((0,0,0))
+
     for e in pg.event.get():
         if e.type==pg.QUIT: exit(0)
         if e.type==pg.KEYDOWN and e.key==32 and cooldown<0 and count>0:
@@ -105,10 +107,13 @@ while True:
                 if kids[off][2]<1:
                     del kids[off]
                     k-=1
+                    score+=100
             k-=1
         off+=1
     if len(kids)==0:
-        summon(r.randint(1,24))
+        print('b')
+        summon(5+m.floor(6*m.log(wave,10)))
+        wave+=1
     #handle player
     if not flip: screen.blit(player,(px,py))
     else: screen.blit(pg.transform.flip(player,True,False),(px,py))
@@ -146,5 +151,9 @@ while True:
         if r.random()<0.01 and not ((px>30 and px<30+244) and (py>30 and py<30+356)):
             pizzaMatrix[i][r.randint(0,1)]=True
     cooldown-=1
+    text=font.render(f'Score: {score}',True,(255,255,255),(0,0,0))
+    screen.blit(text,textRect)
+    textRect.right=1280-len(str(score))*8
+
     pg.display.update()
     pg.time.Clock().tick(60)
