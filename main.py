@@ -5,6 +5,7 @@ import random as r
 import math as m
 pg.init()
 screen=pg.display.set_mode((1280,720))
+stage=1
 #player
 player=pg.image.load('gfx/player.png')
 px=50
@@ -14,6 +15,8 @@ v=7
 count=0
 wave=1
 score=0
+genHealth=lambda w:10*60*(w+1)
+health=genHealth(1)
 #pizzas
 pizza=pg.image.load('gfx/pizza.png')
 pizzas=[]
@@ -42,20 +45,32 @@ def summon(c):
     for i in range(len(rows)):
         for j in range(len(rows[i])):
             if rows[i][j]!=0:
-                kids.append([750+70*j,100*i,5])
+                kids.append([650+70*j,100*i,5])
     print(kids)
     return rows
 print(summon(5))
-
+#font
 font = pg.font.Font(pg.font.get_default_font(), 16)
 text=font.render('Score: 0',True,(255,255,255),(0,0,0))
 textRect=text.get_rect()
 textRect.top=0
 textRect.right=1280
-
+#shadow freddy
+shadow=pg.image.load('gfx/shadow.png')
+sy=250
+delay=1
+delC=60
+delDel=True
+vel=7
 while True:
+    if stage==0:
+        screen.fill((0,0,0))
+        tx=font.render('game over!',True,(255,255,255),(0,0,0))
+        txr=tx.get_rect()
+        screen.blit(tx,(560,360))
+        pg.display.update()
+        continue
     screen.fill((0,0,0))
-
     for e in pg.event.get():
         if e.type==pg.QUIT: exit(0)
         if e.type==pg.KEYDOWN and e.key==32 and cooldown<0 and count>0:
@@ -92,7 +107,9 @@ while True:
         screen.blit(pizza,(j[0],j[1]))
         if not j[2]: pizzas[i][0]+=mv
         else: pizzas[i][0]-=mv
-        if j[0]>-100 and j[0]<1280: n.append(j)
+        if j[0]>-100 and j[0]<1280:
+            if (not (j[0]>590-92 and j[1]>sy-92 and j[1]<sy+128)) or wave==1:
+                n.append(j)
     pizzas=n
     #handle kids
     off=0
@@ -114,6 +131,12 @@ while True:
         print('b')
         summon(5+m.floor(6*m.log(wave,10)))
         wave+=1
+        health=genHealth(wave)
+        if wave!=1:
+            delC=round(1/((wave-1)*2-1))
+            vel=round(7/(1+2.718281828**(-wave+4)))
+            delDel=True
+            print(delC)
     #handle player
     if not flip: screen.blit(player,(px,py))
     else: screen.blit(pg.transform.flip(player,True,False),(px,py))
@@ -150,10 +173,35 @@ while True:
     for i in range(len(pizzaMatrix)):
         if r.random()<0.01 and not ((px>30 and px<30+244) and (py>30 and py<30+356)):
             pizzaMatrix[i][r.randint(0,1)]=True
-    cooldown-=1
+
+    #draw and move shadow freddy
+    #TODO: fix jiterry freddy from late waves
+    if wave!=1:
+        screen.blit(shadow,(590,sy))
+        if delDel:
+            if delay>0: delay-=1
+            elif delay==0:
+                delDel=False
+                delay=delC
+        else:
+            if sy>py: sy-=vel
+            elif sy<py: sy+=vel
+            if sy-vel<py and sy+vel>py: delDel=True
+    #UI
     text=font.render(f'Score: {score}',True,(255,255,255),(0,0,0))
     screen.blit(text,textRect)
     textRect.right=1280-len(str(score))*8
+    #health
+    origs=50
+    hProc=m.floor((health/genHealth(wave))*100)
+    if health>=0:
+        for i in range(hProc):
+            pg.draw.rect(screen,(255,0,0),pg.Rect(origs+i*10,10,5,20))
+    if health<0:
+        stage=0
 
+    cooldown-=1
+    health-=1
+    print(health)
     pg.display.update()
     pg.time.Clock().tick(60)
