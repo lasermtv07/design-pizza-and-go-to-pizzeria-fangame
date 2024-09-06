@@ -1,13 +1,23 @@
 #!/usr/bin/python3
 import pygame as pg
+from pygame import mixer
 import sys
 import random as r
 import math as m
 pg.init()
 screen=pg.display.set_mode((1280,720))
 stage=1
+pause=False
+#sound
+mixer.init()
+scoreS=pg.mixer.Sound('sfx/score.wav')
+hitS=pg.mixer.Sound('sfx/hit.wav')
+collectS=pg.mixer.Sound('sfx/collect.wav')
+shootS=pg.mixer.Sound('sfx/shoot.wav')
 #player
 player=pg.image.load('gfx/player.png')
+panimc=0
+panimf=False
 px=50
 py=450
 flip=False
@@ -30,6 +40,9 @@ pizzaMatrix=[
 ]
 #kids
 kid=pg.image.load('gfx/kid.png')
+fullKid=pg.image.load('gfx/fullKid.png')
+fullId=-1
+fullIdTimer=0
 kids=[]
 #summons kids
 def summon(c):
@@ -62,6 +75,9 @@ delay=1
 delC=60
 delDel=True
 vel=7
+#floating text
+floaty=font.render('100',True,(255,255,255),(0,0,0))
+floatyTodraw=[]
 while True:
     if stage==0:
         screen.fill((0,0,0))
@@ -76,6 +92,7 @@ while True:
         if e.type==pg.KEYDOWN and e.key==32 and cooldown<0 and count>0:
             if not flip: pizzas.append([px+64,py+offset,flip])
             else: pizzas.append([px-92,py+offset,flip])
+            shootS.play()
             cooldown=10
             count-=1
     #draws border
@@ -88,17 +105,18 @@ while True:
     pg.draw.rect(screen,(30,30,30),pg.Rect(30,30,244,356))
     off=0
     for i in pizzaMatrix:
-
         if i[0]: screen.blit(pizza,(50,50+off*112))
         if i[1]: screen.blit(pizza,(50+92+20,50+off*112))
         if px>50-64 and px<50+92 and py>50+off*112-128 and py<50+off*112+92 and i[0]:
             if count<=6:
                 pizzaMatrix[off][0]=False
                 count+=1
+                collectS.play()
         if px>50-64+92+20 and px<50+2*92+20 and py>50+off*112-128 and py<50+off*112+92 and i[1]:
             if count<=6:
                 pizzaMatrix[off][1]=False
                 count+=1
+                collectS.play()
         off+=1
     #draw pizzas
     n=[]
@@ -114,7 +132,10 @@ while True:
     #handle kids
     off=0
     for i in kids:
-        screen.blit(kid,(i[0],i[1]))
+        if i==fullId and fullIdTimer>0:
+            screen.blit(fullKid,(i[0],i[1]))
+        else:
+            screen.blit(kid,(i[0],i[1]))
         k=len(pizzas)-1
         while k>=0:
             j=pizzas[k]
@@ -123,8 +144,14 @@ while True:
                 kids[off][2]-=1
                 if kids[off][2]<1:
                     del kids[off]
+                    scoreS.play()
                     k-=1
                     score+=100
+                    floatyTodraw.append([j[0]+64,j[1],j[1]-100])
+                else:
+                    hitS.play()
+                    fullId=i
+                    fullIdTimer=10
             k-=1
         off+=1
     if len(kids)==0:
@@ -133,7 +160,7 @@ while True:
         wave+=1
         health=genHealth(wave)
         if wave!=1:
-            delC=round(1/((wave-1)*2-1))
+            delC=60*round(1/((wave-1)*2-1))
             vel=round(7/(1+2.718281828**(-wave+4)))
             delDel=True
             print(delC)
@@ -187,6 +214,17 @@ while True:
             if sy>py: sy-=vel
             elif sy<py: sy+=vel
             if sy-vel<py and sy+vel>py: delDel=True
+    #draw score text
+    temp=[]
+    for i in floatyTodraw:
+        if not (i[1]<=i[2]):
+            temp.append(i)
+    floatyTodraw=temp
+    for i in range(len(floatyTodraw)):
+        j=floatyTodraw[i]
+        screen.blit(floaty,(j[0],j[1]))
+        if j[1]>j[2]:
+            floatyTodraw[i][1]-=3
     #UI
     text=font.render(f'Score: {score}',True,(255,255,255),(0,0,0))
     screen.blit(text,textRect)
@@ -202,6 +240,18 @@ while True:
 
     cooldown-=1
     health-=1
+    if panimc%10==0:
+        if panimf:
+            player=pg.image.load("gfx/player1.png")
+            kid=pg.image.load("gfx/kid1.png")
+        else:
+            player=pg.image.load("gfx/player.png")
+            kid=pg.image.load("gfx/kid.png")
+        panimf=not panimf
+        panimc=0
+    panimc+=1
+    if fullIdTimer>-100:
+        fullIdTimer-=1
     print(health)
     pg.display.update()
     pg.time.Clock().tick(60)
