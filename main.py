@@ -6,7 +6,7 @@ import random as r
 import math as m
 pg.init()
 screen=pg.display.set_mode((1280,720))
-stage=1
+stage=2
 pause=False
 #sound
 mixer.init()
@@ -38,6 +38,14 @@ pizzaMatrix=[
     [True,True],
     [True,True]
 ]
+#pizza designs
+pepperoni=pg.image.load('gfx/pepperoni.png')
+sausage=pg.image.load('gfx/sausage.png')
+onion=pg.image.load('gfx/onion.png')
+mushroom=pg.image.load('gfx/mushrooms.png')
+olive=pg.image.load('gfx/olives.png')
+pepper=pg.image.load('gfx/peppers.png')
+designs=[True,True,True,True,True,True]
 #kids
 kid=pg.image.load('gfx/kid.png')
 fullKid=pg.image.load('gfx/fullKid.png')
@@ -78,6 +86,8 @@ vel=7
 #floating text
 floaty=font.render('100',True,(255,255,255),(0,0,0))
 floatyTodraw=[]
+#other inicialization vars
+buttons=[False for i in range(6)]
 while True:
     if stage==0:
         screen.fill((0,0,0))
@@ -85,6 +95,64 @@ while True:
         txr=tx.get_rect()
         screen.blit(tx,(560,360))
         pg.display.update()
+        continue
+    if stage==2:
+        screen.fill((0,0,0))
+        #uhh
+        pizzaNew=pg.transform.scale(pizza,(350,350))
+        screen.blit(pizzaNew,(100,250))
+        pepperoniNew=pg.transform.scale(pepperoni,(350,350))
+        sausageNew=pg.transform.scale(sausage,(350,350))
+        onionNew=pg.transform.scale(onion,(350,350))
+        mushroomNew=pg.transform.scale(mushroom,(350,350))
+        oliveNew=pg.transform.scale(olive,(350,350))
+        pepperNew=pg.transform.scale(pepper,(350,350))
+        if buttons[0]: screen.blit(pepperoniNew,(100,250))
+        if buttons[1]: screen.blit(sausageNew,(100,250))
+        if buttons[2]: screen.blit(onionNew,(100,250))
+        if buttons[3]: screen.blit(mushroomNew,(100,250))
+        if buttons[4]: screen.blit(oliveNew,(100,250))
+        if buttons[5]: screen.blit(pepperNew,(100,250))
+
+        fonts = pg.font.Font(pg.font.get_default_font(), 32)
+        labels=["Pepperoni","Sausage","Onions","Mushroom","Olives","Peppers"]
+        for i in range(len(buttons)):
+            j=buttons[i]
+            if j: 
+                color=(255,255,255)
+                fColor=(0,0,255)
+            else:
+                color=(150,150,150)
+                fColor=color
+            if i in [0,1]: shift=0
+            elif i in [2,3]: shift=1
+            else: shift=2
+            pg.draw.rect(screen,fColor,pg.Rect(700+i%2*200-10,300+shift*75-5,195,50),2)
+            screen.blit(fonts.render(labels[i],False,color,(0,0,0)),(700+i%2*200,300+shift*75))
+        column=None
+        row=None
+        if pg.mouse.get_pos()[0]>675 and pg.mouse.get_pos()[0]<880:
+            column=0
+        if pg.mouse.get_pos()[0]>880 and pg.mouse.get_pos()[0]<1080:
+            column=1
+        if pg.mouse.get_pos()[1]>295 and pg.mouse.get_pos()[1]<345:
+            row=0
+        if pg.mouse.get_pos()[1]>370 and pg.mouse.get_pos()[1]<420:
+            row=1
+        if pg.mouse.get_pos()[1]>445 and pg.mouse.get_pos()[1]<495:
+            row=2
+
+        screen.blit(fonts.render("Press <ANY> to start",(0,0,0),(255,255,255)),(700,600))
+        pg.display.update()
+        for e in pg.event.get():
+            if e.type==pg.QUIT: exit(0)
+            if e.type==pg.MOUSEBUTTONDOWN:
+                if column!=None and row!=None:
+                    buttons[2*row+column]=not buttons[2*row+column]
+            if e.type==pg.KEYDOWN:
+                print('press')
+                designs=buttons
+                stage=1
         continue
     screen.fill((0,0,0))
     for e in pg.event.get():
@@ -105,8 +173,22 @@ while True:
     pg.draw.rect(screen,(30,30,30),pg.Rect(30,30,244,356))
     off=0
     for i in pizzaMatrix:
-        if i[0]: screen.blit(pizza,(50,50+off*112))
-        if i[1]: screen.blit(pizza,(50+92+20,50+off*112))
+        if i[0]: 
+            screen.blit(pizza,(50,50+off*112))
+            if designs[0]: screen.blit(pepperoni,(50,50+off*112))
+            if designs[1]: screen.blit(sausage,(50,50+off*112))
+            if designs[2]: screen.blit(onion,(50,50+off*112))
+            if designs[3]: screen.blit(mushroom,(50,50+off*112))
+            if designs[4]: screen.blit(olive,(50,50+off*112))
+            if designs[5]: screen.blit(pepper,(50,50+off*112))
+        if i[1]: 
+            screen.blit(pizza,(50+92+20,50+off*112))
+            if designs[0]: screen.blit(pepperoni,(50+92+20,50+off*112))
+            if designs[1]: screen.blit(sausage,(50+92+20,50+off*112))
+            if designs[2]: screen.blit(onion,(50+92+20,50+off*112))
+            if designs[3]: screen.blit(mushroom,(50+92+20,50+off*112))
+            if designs[4]: screen.blit(olive,(50+92+20,50+off*112))
+            if designs[5]: screen.blit(pepper,(50+92+20,50+off*112))
         if px>50-64 and px<50+92 and py>50+off*112-128 and py<50+off*112+92 and i[0]:
             if count<=6:
                 pizzaMatrix[off][0]=False
@@ -123,10 +205,16 @@ while True:
     for i in range(len(pizzas)):
         j=pizzas[i]
         screen.blit(pizza,(j[0],j[1]))
+        if designs[0]: screen.blit(pepperoni,(j[0],j[1]))
+        if designs[1]: screen.blit(sausage,(j[0],j[1]))
+        if designs[2]: screen.blit(onion,(j[0],j[1]))
+        if designs[3]: screen.blit(mushroom,(j[0],j[1]))
+        if designs[4]: screen.blit(olive,(j[0],j[1]))
+        if designs[5]: screen.blit(pepper,(j[0],j[1]))
         if not j[2]: pizzas[i][0]+=mv
         else: pizzas[i][0]-=mv
         if j[0]>-100 and j[0]<1280:
-            if (not (j[0]>590-92 and j[1]>sy-92 and j[1]<sy+128)) or wave==1:
+            if (not (j[0]>590-92 and j[1]>sy-92 and j[1]<sy+128 and j[0]<590+92)) or wave==1:
                 n.append(j)
     pizzas=n
     #handle kids
@@ -147,6 +235,7 @@ while True:
                     scoreS.play()
                     k-=1
                     score+=100
+                    health+=50
                     floatyTodraw.append([j[0]+64,j[1],j[1]-100])
                 else:
                     hitS.play()
