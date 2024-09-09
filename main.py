@@ -4,6 +4,44 @@ from pygame import mixer
 import sys
 import random as r
 import math as m
+#write/read file functions
+def parseData():
+    try:
+        d=[None,None,None]
+        f=open('data.txt','r')
+        fd=f.read()
+        fd=fd.split("\n")
+        for i in fd:
+            t=i.split(":")
+            if t[0]=='pizza':
+                d[0]=[True if i=='1' else False for i in t[1]]
+            elif t[0]=='high':
+                d[1]=int(t[1])
+            elif t[0]=='scan':
+                if t[1]=='1': d[2]=True
+                else: d[2]=False
+        f.close()
+    except Exception:
+        d=[[True,False,False,False,False,False],0,True]
+        fn=open('data.txt','w')
+        fn.write("pizza:100000\nhigh:0\nscan:1")
+        fn.close()
+    return d
+def writePizza(d):
+    f=open('data.txt','r')
+    fd=f.read()
+    fd=fd.split("\n")
+    for i in range(len(fd)):
+        j=fd[i].split(":")
+        if j[0]=='pizza':
+            fd[i]='pizza:'
+            for k in d:
+                if k: fd[i]+="1"
+                else: fd[i]+="0"
+    f.close()
+    f=open("data.txt","w")
+    f.write("\n".join(fd))
+    f.close()
 pg.init()
 screen=pg.display.set_mode((1280,720))
 stage=2
@@ -38,6 +76,9 @@ pizzaMatrix=[
     [True,True],
     [True,True]
 ]
+
+saved=parseData()
+
 #pizza designs
 pepperoni=pg.image.load('gfx/pepperoni.png')
 sausage=pg.image.load('gfx/sausage.png')
@@ -45,7 +86,7 @@ onion=pg.image.load('gfx/onion.png')
 mushroom=pg.image.load('gfx/mushrooms.png')
 olive=pg.image.load('gfx/olives.png')
 pepper=pg.image.load('gfx/peppers.png')
-designs=[True,True,True,True,True,True]
+designs=saved[0]
 #kids
 kid=pg.image.load('gfx/kid.png')
 fullKid=pg.image.load('gfx/fullKid.png')
@@ -87,7 +128,21 @@ vel=7
 floaty=font.render('100',True,(255,255,255),(0,0,0))
 floatyTodraw=[]
 #other inicialization vars
-buttons=[False for i in range(6)]
+buttons=saved[0]
+#draws pizzeria wall
+def drawWall():
+    global screen
+    pg.draw.rect(screen,(100,100,100),pg.Rect(0,0,1280,200))
+    pg.draw.rect(screen,(50,50,50),pg.Rect(0,150,1280,50))
+    for i in range(52):
+        if i%2==0:
+            pg.draw.rect(screen,(255,255,255),pg.Rect(25*i-10,110,25,25))
+            pg.draw.rect(screen,(0,0,0),pg.Rect(25*i-10,135,25,25))
+        else:
+            pg.draw.rect(screen,(0,0,0),pg.Rect(25*i-10,110,25,25))
+            pg.draw.rect(screen,(255,255,255),pg.Rect(25*i-10,135,25,25))
+    pg.draw.line(screen,(255,0,0),(0,110),(1280,110),width=5)
+    pg.draw.line(screen,(255,0,0),(0,160),(1280,160),width=5)
 while True:
     if stage==0:
         screen.fill((0,0,0))
@@ -99,6 +154,7 @@ while True:
     if stage==2:
         screen.fill((0,0,0))
         #uhh
+        drawWall()
         pizzaNew=pg.transform.scale(pizza,(350,350))
         screen.blit(pizzaNew,(100,250))
         pepperoniNew=pg.transform.scale(pepperoni,(350,350))
@@ -152,6 +208,7 @@ while True:
             if e.type==pg.KEYDOWN:
                 print('press')
                 designs=buttons
+                writePizza(buttons)
                 stage=1
         continue
     screen.fill((0,0,0))
