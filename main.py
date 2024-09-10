@@ -42,6 +42,20 @@ def writePizza(d):
     f=open("data.txt","w")
     f.write("\n".join(fd))
     f.close()
+def writeHigh(d):
+    f=open('data.txt','r')
+    fd=f.read()
+    n=""
+    for i in fd.split("\n"):
+        t=i.split(":")
+        if t[0]=="high":
+            n+=f'high:{d}\n'
+        else:
+            if i!="\n": n+=i+"\n"
+    f.close()
+    f=open("data.txt","w")
+    f.write(n)
+    f.close()
 pg.init()
 screen=pg.display.set_mode((1280,720))
 stage=2
@@ -112,7 +126,7 @@ def summon(c):
     return rows
 print(summon(5))
 #font
-font = pg.font.Font(pg.font.get_default_font(), 16)
+font = pg.font.Font(pg.font.get_default_font(), 24)
 text=font.render('Score: 0',True,(255,255,255),(0,0,0))
 textRect=text.get_rect()
 textRect.top=0
@@ -129,6 +143,8 @@ floaty=font.render('100',True,(255,255,255),(0,0,0))
 floatyTodraw=[]
 #other inicialization vars
 buttons=saved[0]
+overRest=False
+overMenu=False
 #draws pizzeria wall
 def drawWall():
     global screen
@@ -146,10 +162,49 @@ def drawWall():
 while True:
     if stage==0:
         screen.fill((0,0,0))
-        tx=font.render('game over!',True,(255,255,255),(0,0,0))
-        txr=tx.get_rect()
-        screen.blit(tx,(560,360))
+        #draw game over text
+        drawWall()
+        gameOv=pg.font.Font(pg.font.get_default_font(),48)
+        if int(saved[1])<score:
+            saved[1]=score
+            writeHigh(score)
+        tx=gameOv.render('game over!',True,(255,255,255),(0,0,0))
+        screen.blit(tx,(500,260))
+        sc=font.render(f'Score: {score}',True,(255,255,255),(0,0,0))
+        screen.blit(sc,(560,324))
+        hs=font.render(f'Highscore: {saved[1]}',True,(255,255,255),(0,0,0))
+        screen.blit(hs,(560,360))
+        #draw buttons
+        mopo=pg.mouse.get_pos()
+        if mopo[1]>428 and mopo[1]<432+32 and mopo[0]>560 and mopo[0]<650:
+            overRest=True
+        else:
+            overRest=False
+        if mopo[1]>432+34 and mopo[1]<432+34+32 and mopo[0]>560 and mopo[0]<760:
+            overMenu=True
+        else:
+            overMenu=False
+        if not overRest: ovr=font.render('restart',True,(255,255,255),(0,0,0))
+        else: ovr=font.render('restart',True,(0,0,255),(0,0,0))
+        if not overMenu: ovm=font.render('return to menu',True,(255,255,255),(0,0,0))
+        else: ovm=font.render('return to menu',True,(0,0,255),(0,0,0))
+        screen.blit(ovr,(560,432))
+        screen.blit(ovm,(560,432+36))
         pg.display.update()
+        for e in pg.event.get():
+            if e.type==pg.QUIT: exit()
+            if e.type==pg.MOUSEBUTTONDOWN and (overRest or overMenu):
+                wave=1
+                pizzaMatrix=[[True,True],[True,True],[True,True]]
+                score=0
+                health=genHealth(1)
+                kids=[]
+                summon(5)
+                print(kids)
+                if overRest:
+                    stage=1
+                if overMenu:
+                    stage=2
         continue
     if stage==2:
         screen.fill((0,0,0))
@@ -205,6 +260,7 @@ while True:
             if e.type==pg.MOUSEBUTTONDOWN:
                 if column!=None and row!=None:
                     buttons[2*row+column]=not buttons[2*row+column]
+                    hitS.play()
             if e.type==pg.KEYDOWN:
                 print('press')
                 designs=buttons
@@ -307,7 +363,7 @@ while True:
         health=genHealth(wave)
         if wave!=1:
             delC=60*round(1/((wave-1)*2-1))
-            vel=round(7/(1+2.718281828**(-wave+4)))
+            vel=0.5*round(7/(1+2.718281828**(-wave+4)))
             delDel=True
             print(delC)
     #handle player
@@ -357,7 +413,8 @@ while True:
                 delDel=False
                 delay=delC
         else:
-            if sy>py: sy-=vel
+            if abs(sy-py)<15: pass
+            elif sy>py: sy-=vel
             elif sy<py: sy+=vel
             if sy-vel<py and sy+vel>py: delDel=True
     #draw score text
@@ -374,7 +431,7 @@ while True:
     #UI
     text=font.render(f'Score: {score}',True,(255,255,255),(0,0,0))
     screen.blit(text,textRect)
-    textRect.right=1280-len(str(score))*8
+    textRect.right=1280-len(str(score))*12
     #health
     origs=50
     hProc=m.floor((health/genHealth(wave))*100)
@@ -398,6 +455,5 @@ while True:
     panimc+=1
     if fullIdTimer>-100:
         fullIdTimer-=1
-    print(health)
     pg.display.update()
     pg.time.Clock().tick(60)
