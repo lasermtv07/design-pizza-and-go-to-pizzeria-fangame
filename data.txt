@@ -1,7 +1,3 @@
-pizza:110001
-high:2100
+pizza:110110
+high:3900
 scan:1
-
-
-
-

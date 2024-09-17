@@ -1,4 +1,10 @@
 #!/usr/bin/python3
+
+# DESIGN PIZZA & GO To PIZZERIA
+# a fnaf fangame by
+# (c) lasermtv07, 2024
+# this software is FOSS, released under the MIT license
+
 import pygame as pg
 from pygame import mixer
 import sys
@@ -56,9 +62,22 @@ def writeHigh(d):
     f=open("data.txt","w")
     f.write(n)
     f.close()
+def writeScan(d):
+    p=parseData()
+    pt=""
+    for i in p[0]:
+        if i:pt+="1"
+        else: pt+="0"
+    o=f'pizza:{pt}\n'
+    o+=f"high:{p[1]}\n"
+    if d: o+="scan:1"
+    else: o+="scan:0"
+    f=open('data.txt','w')
+    f.write(o)
+    f.close()
 pg.init()
 screen=pg.display.set_mode((1280,720))
-stage=2
+stage=3
 pause=False
 #sound
 mixer.init()
@@ -125,6 +144,12 @@ def summon(c):
     print(kids)
     return rows
 print(summon(5))
+def drawScanlines():
+    global saved
+    global screen
+    if saved[2]:
+        for i in range(m.floor(720/3)):
+            pg.draw.line(screen,(0,0,0),(0,3*i),(1280,3*i))
 #font
 font = pg.font.Font(pg.font.get_default_font(), 24)
 text=font.render('Score: 0',True,(255,255,255),(0,0,0))
@@ -145,6 +170,10 @@ floatyTodraw=[]
 buttons=saved[0]
 overRest=False
 overMenu=False
+overPlay=False
+overDes=False
+overBack=False
+overSwitch=False
 #draws pizzeria wall
 def drawWall():
     global screen
@@ -160,11 +189,66 @@ def drawWall():
     pg.draw.line(screen,(255,0,0),(0,110),(1280,110),width=5)
     pg.draw.line(screen,(255,0,0),(0,160),(1280,160),width=5)
 while True:
+    if stage==3:
+        screen.fill((0,0,0))
+        drawWall()
+        #ignore the name i uhh. borrowed this code from other part of the program
+        gameOv=pg.font.Font(pg.font.get_default_font(),48)
+        tl1=gameOv.render('Design Pizza',True,(255,255,255),(0,0,0,0))
+        screen.blit(tl1,(400,250))
+        tl2=gameOv.render('& Go To Pizzeria',True,(255,255,255),(0,0,0,0))
+        screen.blit(tl2,(450,300))   
+        fonts = pg.font.Font(pg.font.get_default_font(), 32)
+        if overPlay: pl=fonts.render('play',True,(0,0,255),(0,0,0))
+        else: pl=fonts.render('play',True,(255,255,255),(0,0,0))
+        if overDes: dp=fonts.render('design pizza',True,(0,0,255),(0,0,0))
+        else: dp=fonts.render('design pizza',True,(255,255,255),(0,0,0))
+        screen.blit(pl,(550,400))
+        screen.blit(dp,(550,450))
+        
+        if saved[2]: stx="scanlines: yes"
+        else: stx="scanlines: no"
+        if overSwitch: screen.blit(fonts.render(stx,True,(0,0,255),(0,0,0)),(10,670))
+        else: screen.blit(fonts.render(stx,True,(255,255,255),(0,0,0)),(10,670))
+        #disc=fangame of FNAF by Scott Cawthon"
+        screen.blit(font.render("(c) lasermtv07, under MIT license",True,(255,255,255),(0,0,0)),(830,650))
+        screen.blit(font.render("fangame of a game by Scott Cawthon",True,(255,255,255),(0,0,0)),(830,680))
+        if pg.mouse.get_pos()[0]<235 and pg.mouse.get_pos()[1]>665 and pg.mouse.get_pos()[1]<710:
+            overSwitch=True
+        else:
+            overSwitch=False
+        if pg.mouse.get_pos()[0]>540 and pg.mouse.get_pos()[0]<760:
+            if pg.mouse.get_pos()[1]>395 and pg.mouse.get_pos()[1]<440:
+                overPlay=True
+            else: overPlay=False
+            if pg.mouse.get_pos()[1]>450 and pg.mouse.get_pos()[1]<490:
+                overDes=True
+            else: overDes=False
+        else:
+            overPlay=False
+            overDes=False
+        
+        drawScanlines()
+        pg.display.update()
+        for e in pg.event.get():
+            if e.type==pg.QUIT: exit()
+            if e.type==pg.MOUSEBUTTONDOWN:
+                if overPlay:
+                    scoreS.play()
+                    stage=1
+                if overDes:
+                    scoreS.play()
+                    stage=2
+                if overSwitch:
+                    scoreS.play()
+                    writeScan(not saved[2])
+                    saved=parseData()
+        continue
+
     if stage==0:
         screen.fill((0,0,0))
         #draw game over text
         drawWall()
-        gameOv=pg.font.Font(pg.font.get_default_font(),48)
         if int(saved[1])<score:
             saved[1]=score
             writeHigh(score)
@@ -190,6 +274,7 @@ while True:
         else: ovm=font.render('return to menu',True,(0,0,255),(0,0,0))
         screen.blit(ovr,(560,432))
         screen.blit(ovm,(560,432+36))
+        drawScanlines()
         pg.display.update()
         for e in pg.event.get():
             if e.type==pg.QUIT: exit()
@@ -202,9 +287,11 @@ while True:
                 summon(5)
                 print(kids)
                 if overRest:
+                    scoreS.play()
                     stage=1
                 if overMenu:
-                    stage=2
+                    scoreS.play()
+                    stage=3
         continue
     if stage==2:
         screen.fill((0,0,0))
@@ -225,7 +312,6 @@ while True:
         if buttons[4]: screen.blit(oliveNew,(100,250))
         if buttons[5]: screen.blit(pepperNew,(100,250))
 
-        fonts = pg.font.Font(pg.font.get_default_font(), 32)
         labels=["Pepperoni","Sausage","Onions","Mushroom","Olives","Peppers"]
         for i in range(len(buttons)):
             j=buttons[i]
@@ -252,8 +338,15 @@ while True:
             row=1
         if pg.mouse.get_pos()[1]>445 and pg.mouse.get_pos()[1]<495:
             row=2
+        if pg.mouse.get_pos()[0]>990 and pg.mouse.get_pos()[1]>590 and pg.mouse.get_pos()[1]<650:
+            overBack=True
+        else: overBack=False
+        if overBack:
+            screen.blit(fonts.render("< back to menu",(0,0,0),(0,0,255)),(1000,600))
+        else:
+            screen.blit(fonts.render("< back to menu",(0,0,0),(255,255,255)),(1000,600))
 
-        screen.blit(fonts.render("Press <ANY> to start",(0,0,0),(255,255,255)),(700,600))
+        drawScanlines()
         pg.display.update()
         for e in pg.event.get():
             if e.type==pg.QUIT: exit(0)
@@ -261,11 +354,9 @@ while True:
                 if column!=None and row!=None:
                     buttons[2*row+column]=not buttons[2*row+column]
                     hitS.play()
-            if e.type==pg.KEYDOWN:
-                print('press')
-                designs=buttons
-                writePizza(buttons)
-                stage=1
+                if overBack:
+                    scoreS.play()
+                    stage=3
         continue
     screen.fill((0,0,0))
     for e in pg.event.get():
@@ -404,7 +495,6 @@ while True:
             pizzaMatrix[i][r.randint(0,1)]=True
 
     #draw and move shadow freddy
-    #TODO: fix jiterry freddy from late waves
     if wave!=1:
         screen.blit(shadow,(590,sy))
         if delDel:
@@ -428,6 +518,8 @@ while True:
         screen.blit(floaty,(j[0],j[1]))
         if j[1]>j[2]:
             floatyTodraw[i][1]-=3
+    #scanlines
+
     #UI
     text=font.render(f'Score: {score}',True,(255,255,255),(0,0,0))
     screen.blit(text,textRect)
@@ -455,5 +547,6 @@ while True:
     panimc+=1
     if fullIdTimer>-100:
         fullIdTimer-=1
+    drawScanlines()
     pg.display.update()
     pg.time.Clock().tick(60)
